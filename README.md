@@ -51,7 +51,7 @@ git clone https://github.com/<你的用户名>/<仓库名>.git
 
 ## 开发
 
-环境：Firefox 140+、Node.js 18+、Python 3.8+（仅打包用）。
+环境：Firefox 142+、Node.js 18+、Python 3.8+（仅打包用）。
 
 ```bash
 # 语法检查
@@ -100,7 +100,7 @@ python scripts/pack.py
 
 ## 已知限制
 
-- `manifest_version: 2`，Firefox 140+ 支持
+- `manifest_version: 2`，需 Firefox 142 或更高版本（因使用了 `data_collection_permissions` 字段）
 - 窗口尺寸上限 1600 × 1200，超出屏幕时由 Firefox 自动收进工作区
 - 仅支持桌面 Firefox。Android 版不支持 `windows.create({ type: 'popup' })`，本扩展也未声明 `gecko_android`
 
