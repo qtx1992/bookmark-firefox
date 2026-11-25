@@ -1,0 +1,22 @@
+# 构建产物（通过 GitHub Releases 分发，不入库）
+*.xpi
+*.zip
+dist/
+
+# 依赖
+node_modules/
+package-lock.json
+
+# 编辑器 / IDE
+.vscode/
+.idea/
+*.swp
+
+# 操作系统
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# 临时文件
+*.log
+*.tmp

@@ -1,0 +1,10 @@
+# 统一换行符：仓库内一律 LF，避免跨平台差异把 CRLF 带进打包产物
+* text=auto eol=lf
+
+# 二进制文件不做换行转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.xpi binary
+*.zip binary
+*.ico binary

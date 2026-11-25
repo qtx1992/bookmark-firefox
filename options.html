@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookmark 选项设置</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="page">
+    <header class="page-header">
+      <svg class="page-logo" viewBox="0 0 1024 1024" aria-hidden="true">
+        <path d="M188.66 906.63 V194.69 a77.32 77.32 0 0 1 77.32 -77.32 H758.02 a77.32 77.32 0 0 1 77.32 77.32 V906.63 L512 724.88 Z"
+              fill="none" stroke="currentColor" stroke-width="91.38"
+              stroke-linejoin="round" stroke-linecap="round"></path>
+      </svg>
+      <div class="page-heading">
+        <h1>Bookmark 选项设置</h1>
+        <p>窗口尺寸、主题、排序与默认文件夹</p>
+      </div>
+    </header>
+
+    <main class="sections">
+      <!-- 外观 -->
+      <section class="card">
+        <div class="card-head">
+          <h2>外观</h2>
+          <span class="card-sub">窗口内与设置页共用</span>
+        </div>
+
+        <div class="row">
+          <div class="row-label">
+            <span class="label">主题模式</span>
+            <span class="hint">跟随系统时会自动切换亮色 / 暗色</span>
+          </div>
+          <select id="themeMode">
+            <option value="auto">🌓 自动（跟随系统）</option>
+            <option value="light">☀️ 亮色主题</option>
+            <option value="dark">🌙 暗色主题</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <div class="row-label">
+            <span class="label">显示列数</span>
+            <span class="hint">自动：按当前宽度铺满，窗口越宽显示越多</span>
+          </div>
+          <select id="displayColumns">
+            <option value="auto">自动铺满</option>
+            <option value="1">一列</option>
+            <option value="2">二列</option>
+            <option value="3">三列</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <div class="row-label">
+            <span class="label">网格滚动条</span>
+            <span class="hint">默认隐藏；隐藏后仍可用滚轮 / 触控板滚动</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="showScrollbar">
+            <span class="switch-track"><span class="switch-dot"></span></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- 窗口尺寸 -->
+      <section class="card">
+        <div class="card-head">
+          <h2>窗口尺寸</h2>
+          <span class="card-sub">拖窗口边框也能调，这里可以精确设置</span>
+        </div>
+
+        <div class="size-preview-row">
+          <div class="size-preview" id="sizePreview">
+            <div class="size-preview-inner" id="sizePreviewInner">
+              <span id="sizePreviewLabel">960 × 720</span>
+            </div>
+          </div>
+          <div class="size-sliders">
+            <label class="slider-row">
+              <span>宽度</span>
+              <input type="range" id="sizeW" min="480" max="1600" step="10">
+              <output id="sizeWOut">960</output>
+            </label>
+            <label class="slider-row">
+              <span>高度</span>
+              <input type="range" id="sizeH" min="360" max="1200" step="10">
+              <output id="sizeHOut">720</output>
+            </label>
+            <div class="preset-row" id="sizePresets">
+              <button class="chip" id="resetSize">恢复默认</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="row-label">
+            <span class="label">立即应用</span>
+            <span class="hint" id="windowSizeHint">调整后会同步到已打开的窗口</span>
+          </div>
+          <div class="inline-actions">
+            <button class="btn ghost" id="openWindowBtn">现在打开</button>
+            <button class="btn ghost" id="resetWindowSize">清除记录</button>
+          </div>
+        </div>
+
+        <p class="note" id="sizeNote">
+          点击工具栏图标会直接打开这个尺寸的独立窗口，再次点击则聚焦已有窗口。
+          窗口内没有滚动条，内容铺满整个窗口；窗口越大，列数越多。
+        </p>
+      </section>
+
+      <!-- 书签 -->
+      <section class="card">
+        <div class="card-head">
+          <h2>书签与排序</h2>
+          <span class="card-sub">打开时显示的目录</span>
+        </div>
+
+        <div class="row">
+          <div class="row-label">
+            <span class="label">默认文件夹</span>
+            <span class="hint">打开 Bookmark 时直接进入这个文件夹</span>
+          </div>
+          <select id="defaultFolder">
+            <option value="">加载中…</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <div class="row-label">
+            <span class="label">排序方式</span>
+            <span class="hint">文件夹优先：所有文件夹排在书签前面</span>
+          </div>
+          <select id="sortMode">
+            <option value="folder-first">📁 文件夹优先</option>
+            <option value="natural">📚 浏览器原始顺序</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- 操作说明 -->
+      <section class="card">
+        <div class="card-head">
+          <h2>操作提示</h2>
+        </div>
+        <ul class="tips">
+          <li><b>搜索</b>：输入即搜，匹配书签名称与网址；<kbd>/</kbd> 或 <kbd>Ctrl</kbd>+<kbd>F</kbd> 聚焦搜索框。</li>
+          <li><b>右键</b>：编辑、复制链接、删除、移到上级文件夹。</li>
+          <li><b>拖拽</b>：拖动书签可排序，拖到文件夹上可移入，拖到面包屑可回到上级。</li>
+          <li><b>返回</b>：<kbd>Alt</kbd>+<kbd>←</kbd> 或 <kbd>Backspace</kbd> 返回上级，<kbd>Esc</kbd> 关闭。</li>
+          <li><b>调整大小</b>：直接拖窗口边框，或在上面用滑块精确设置。</li>
+        </ul>
+      </section>
+
+      <section class="card about">
+        <div class="card-head">
+          <h2>关于</h2>
+          <span class="card-sub" id="versionText">Bookmark 1.1.0</span>
+        </div>
+        <p class="about-text">
+          Bookmark - 简洁书签：简洁的书签管理器，独立窗口打开，支持多列布局、可调整大小、无滚动条浏览。
+        </p>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <button class="btn ghost danger-text" id="resetAll">恢复全部默认设置</button>
+      <span class="save-state" id="saveState"></span>
+    </footer>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
