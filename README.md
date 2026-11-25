@@ -106,4 +106,28 @@ python scripts/pack.py
 
 ## 许可
 
-[MIT](LICENSE)
+本项目以 **GNU General Public License v3.0** 发布，SPDX 标识 `GPL-3.0-only`，完整文本见 [LICENSE](LICENSE)。
+
+这是**持续开源**的许可证：你可以自由使用、修改、分发，但分发修改后的版本时必须同样以 GPL-3.0 开源并提供源码，不能转为闭源专有软件。因此任何基于本项目的衍生版本也会保持开源免费。
+
+```
+Copyright (C) 2026 qtx1992
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+```
+
+## 与 BookyPop 的关系
+
+本项目在功能设计上参考了 [BookyPop - 快捷书签](https://addons.mozilla.org/zh-CN/firefox/addon/bookypop-快捷书签/)（作者 QH，GPL-3.0-only）的思路，但代码为独立实现，不含其源码或素材。
+
+开发初期的图标曾临时复用过该项目的素材，现已全部替换为本项目按自身设计稿用代码生成的图标。当前仓库内不包含任何来自该项目的文件。
+
+本项目采用与之一致的 GPL-3.0 许可证。
+
