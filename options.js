@@ -6,7 +6,8 @@
     themeMode: 'auto',
     sortMode: 'folder-first',
     displayColumns: 'auto',
-    showScrollbar: false
+    showScrollbar: true,
+    autoClose: true
   };
 
   /* 只用独立窗口形态，尺寸只受屏幕约束 */
@@ -185,6 +186,7 @@
     $('displayColumns').value = state.settings.displayColumns || 'auto';
     $('sortMode').value = state.settings.sortMode || 'folder-first';
     $('showScrollbar').checked = !!state.settings.showScrollbar;
+    $('autoClose').checked = !!state.settings.autoClose;
 
     initSizeControls();
     updateWindowHint();
@@ -267,6 +269,10 @@
 
     $('showScrollbar').addEventListener('change', (event) => {
       saveSync({ showScrollbar: event.target.checked });
+    });
+
+    $('autoClose').addEventListener('change', (event) => {
+      saveSync({ autoClose: event.target.checked });
     });
 
     $('defaultFolder').addEventListener('change', (event) => {
@@ -357,6 +363,10 @@
         if (changes.showScrollbar) {
           state.settings.showScrollbar = !!changes.showScrollbar.newValue;
           $('showScrollbar').checked = state.settings.showScrollbar;
+        }
+        if (changes.autoClose) {
+          state.settings.autoClose = !!changes.autoClose.newValue;
+          $('autoClose').checked = state.settings.autoClose;
         }
         if (changes.defaultFolderId) {
           state.settings.defaultFolderId = changes.defaultFolderId.newValue;

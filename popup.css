@@ -366,40 +366,48 @@ html, body {
 
 .grid {
   height: 100%;
-  padding: 10px 12px 12px;
+  padding: 10px 4px 12px 12px;
   display: grid;
   grid-template-columns: var(--grid-cols);
   gap: 8px 10px;
   align-content: start;
   overflow-y: auto;
   overflow-x: hidden;
-  /* 核心：彻底隐藏滚动条，但滚轮/触控板仍可滚动 */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  /* 默认显示细滚动条，位置一目了然 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) transparent;
   overscroll-behavior: contain;
 }
 
 .grid::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.grid::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 4px;
+}
+
+.grid::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* 用户在设置里关掉滚动条时 */
+body.hide-scrollbar .grid {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-right: 12px;
+}
+
+body.hide-scrollbar .grid::-webkit-scrollbar {
   width: 0 !important;
   height: 0 !important;
   display: none;
-}
-
-/* 用户在设置里主动要求显示滚动条时 */
-body.show-scrollbar .grid {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scroll-thumb) transparent;
-  padding-right: 4px;
-}
-
-body.show-scrollbar .grid::-webkit-scrollbar {
-  width: 6px;
-  display: block;
-}
-
-body.show-scrollbar .grid::-webkit-scrollbar-thumb {
-  background: var(--scroll-thumb);
-  border-radius: 3px;
 }
 
 /* ---------------- 卡片 ---------------- */
@@ -523,7 +531,7 @@ body.show-scrollbar .grid::-webkit-scrollbar-thumb {
 
 .statusbar {
   flex: none;
-  height: 22px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -537,10 +545,85 @@ body.show-scrollbar .grid::-webkit-scrollbar-thumb {
   overflow: hidden;
 }
 
-.statusbar-right { color: var(--faint); font-variant-numeric: tabular-nums; }
+.statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.statusbar-sep {
+  width: 1px;
+  height: 11px;
+  background: var(--border);
+  flex: none;
+}
 
 .scroll-hint { color: var(--accent); }
 .scroll-hint::before { content: " · "; color: var(--faint); }
+
+/* ---------------- 自动关闭开关 ---------------- */
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--muted);
+  transition: color 0.15s ease;
+}
+
+.toggle:hover { color: var(--text); }
+
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.toggle-track {
+  position: relative;
+  width: 26px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--card-hover);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 1px;
+  flex: none;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.toggle-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.16s ease, background 0.16s ease;
+}
+
+.toggle input:checked + .toggle-track {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.toggle input:checked + .toggle-track .toggle-dot {
+  transform: translateX(12px);
+  background: #fff;
+}
+
+.toggle input:focus-visible + .toggle-track {
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.toggle input:checked ~ .toggle-text { color: var(--accent); }
+
+.toggle-text { font-size: 11px; line-height: 1; }
 
 /* ---------------- 菜单 ---------------- */
 

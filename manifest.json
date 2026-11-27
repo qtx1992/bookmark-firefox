@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Bookmark - 简洁书签",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "简洁的书签管理器，独立窗口打开，多列布局、可调整大小、无滚动条浏览。",
   "browser_specific_settings": {
     "gecko": {

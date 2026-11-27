@@ -56,10 +56,21 @@
         <div class="row">
           <div class="row-label">
             <span class="label">网格滚动条</span>
-            <span class="hint">默认隐藏；隐藏后仍可用滚轮 / 触控板滚动</span>
+            <span class="hint">默认显示细滚动条；关掉后仍可用滚轮 / 触控板滚动</span>
           </div>
           <label class="switch">
             <input type="checkbox" id="showScrollbar">
+            <span class="switch-track"><span class="switch-dot"></span></span>
+          </label>
+        </div>
+
+        <div class="row">
+          <div class="row-label">
+            <span class="label">打开书签后自动关闭窗口</span>
+            <span class="hint">开启后点开任意书签即收起本窗口，适合当作启动器使用；也可在窗口底部状态栏随时切换</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="autoClose">
             <span class="switch-track"><span class="switch-dot"></span></span>
           </label>
         </div>

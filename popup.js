@@ -56,7 +56,8 @@
   const DEFAULT_SETTINGS = {
     themeMode: 'auto',
     sortMode: 'folder-first',
-    showScrollbar: false
+    showScrollbar: true,
+    autoClose: true
   };
 
   /* 只用独立窗口形态，尺寸只受屏幕约束 */
@@ -116,6 +117,8 @@
       this.contextTarget = null;
       this.editTarget = null;
       this.dragState = null;
+      this.autoScrollRaf = null;
+      this.autoScrollDirection = 0;
       this.autoScrollTimer = null;
       this.toastTimer = null;
 
@@ -143,6 +146,7 @@
       this.applyTheme(this.settings.themeMode);
       this.applyColumns(this.settings.displayColumns);
       this.applyScrollbarMode(this.settings.showScrollbar);
+      this.applyAutoClose(this.settings.autoClose);
 
       this.bindEvents();
       this.watchSystemTheme();
@@ -162,6 +166,7 @@
         'searchSummary', 'searchSummaryText', 'searchReset',
         'scrollWrap', 'bookmarkGrid', 'emptyState',
         'statusText', 'statusCount', 'statusScrollHint',
+        'autoCloseToggle', 'autoCloseInput',
         'contextMenu', 'mainMenu',
         'sizePop', 'sizeCurrent', 'sizePresets', 'sizeTip', 'sizeW', 'sizeH', 'sizeApply', 'sizeCancel',
         'editOverlay', 'editTitle', 'editName', 'editUrl', 'urlField', 'editCancel', 'editSave',
@@ -248,7 +253,21 @@
 
     applyScrollbarMode(show) {
       this.settings.showScrollbar = !!show;
-      document.body.classList.toggle('show-scrollbar', !!show);
+      // 默认显示滚动条；关掉时加 hide-scrollbar 类
+      document.body.classList.toggle('hide-scrollbar', !show);
+    }
+
+    applyAutoClose(enabled) {
+      this.settings.autoClose = !!enabled;
+      if (this.els.autoCloseInput) {
+        this.els.autoCloseInput.checked = !!enabled;
+      }
+      const toggle = this.els.autoCloseToggle;
+      if (toggle) {
+        toggle.title = enabled
+          ? '打开书签后自动关闭本窗口（点击关闭）'
+          : '打开书签后保持窗口（点击开启自动关闭）';
+      }
     }
 
     /* ---------------- 窗口尺寸 ----------------
@@ -359,6 +378,9 @@
     /* ---------------- 渲染 ---------------- */
 
     render() {
+      // 重建 DOM 前先结束可能残留的拖拽，避免源元素被移除后状态和滚动计时器失控
+      if (this.dragState || this.autoScrollRaf) this.endDrag();
+
       const searching = !!this.query;
       const items = searching ? this.searchResults() : this.getFolderContents(this.currentFolder);
 
@@ -630,8 +652,11 @@
     async openBookmark(url) {
       if (!url) return;
       try {
-        // 窗口模式下不关闭自己，方便连续打开多个书签
         await browser.tabs.create({ url });
+        // 自动关闭开启时，打开书签后立即收起窗口
+        if (this.settings.autoClose) {
+          window.close();
+        }
       } catch (error) {
         console.error('[Bookmark] 打开书签失败:', error);
         this.toast('打开失败');
@@ -709,6 +734,16 @@
 
       els.backButton.addEventListener('click', () => this.goUp());
 
+      // 状态栏「自动关闭」开关
+      if (els.autoCloseInput) {
+        els.autoCloseInput.addEventListener('change', () => {
+          const enabled = els.autoCloseInput.checked;
+          this.applyAutoClose(enabled);
+          this.saveSettings({ autoClose: enabled });
+          this.toast(enabled ? '打开书签后将自动关闭窗口' : '窗口会保持打开');
+        });
+      }
+
       this.bindGridEvents();
       this.bindMenuEvents();
       this.bindModalEvents();
@@ -716,7 +751,11 @@
       this.bindKeyboard();
 
       els.scrollWrap.addEventListener('scroll', () => this.updateScrollHints(), true);
-      this.grid.addEventListener('scroll', () => this.updateScrollHints());
+      this.grid.addEventListener('scroll', () => {
+        // 自愈：没有拖拽却还有自动滚动在跑，说明状态泄漏，立即清理
+        if (!this.dragState && this.autoScrollRaf) this.stopAutoScroll();
+        this.updateScrollHints();
+      });
 
       window.addEventListener('resize', () => {
         this.updateScrollHints();
@@ -752,6 +791,9 @@
       }
       if (changes.showScrollbar) {
         this.applyScrollbarMode(changes.showScrollbar.newValue);
+      }
+      if (changes.autoClose) {
+        this.applyAutoClose(changes.autoClose.newValue);
       }
       if (changes.sortMode) {
         this.settings.sortMode = changes.sortMode.newValue || 'folder-first';
@@ -807,12 +849,10 @@
         }
       });
 
-      grid.addEventListener('dragend', () => this.endDrag());
-
       grid.addEventListener('dragover', (event) => {
         if (!this.dragState) return;
         event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
+        if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
 
         const card = event.target.closest('.card');
         this.clearDropMarks(card && card.dataset.id === this.dragState.id ? null : card);
@@ -824,6 +864,7 @@
         this.checkAutoScroll(event);
       });
 
+      // 指针离开网格时立刻停掉自动滚动，避免计时器在网格外空转
       grid.addEventListener('dragleave', (event) => {
         if (!this.dragState) return;
         if (!grid.contains(event.relatedTarget)) {
@@ -850,6 +891,42 @@
           this.moveNode(dragId, target.parentId, target, 'before');
         }
       });
+
+      this.bindDragGuards();
+    }
+
+    /**
+     * 拖拽收尾兜底。
+     *
+     * 卡滚动的根因：拖动落点后会调用 render() 重建整个网格，
+     * 被拖的源元素随 DOM 一起被移除，grid 上的 dragend 因此不再触发，
+     * 自动滚动还在跑（每帧改写 scrollTop），用户滚轮一滚就被拉回去，看起来像"卡死"。
+     * 这里在 document 层补齐所有可能表示"拖拽已结束"的信号，确保一定收尾。
+     */
+    bindDragGuards() {
+      const finish = () => {
+        if (this.dragState || this.autoScrollRaf) this.endDrag();
+      };
+
+      // 延迟到当前事件处理完之后再收尾，避免抢在 grid 的 drop 之前把 dragState 清掉
+      const finishLater = () => {
+        setTimeout(finish, 0);
+      };
+
+      // dragend 是拖拽流程的最后一个事件，不会干扰 drop，捕获阶段安全
+      document.addEventListener('dragend', finish, true);
+
+      // drop / mouseup 必须用冒泡 + 延迟：
+      // 捕获阶段会先于 grid 的 drop 处理器执行，导致排序逻辑拿不到 dragState 而失效
+      document.addEventListener('drop', finishLater, false);
+      document.addEventListener('mouseup', finishLater, false);
+
+      window.addEventListener('blur', finish);
+      window.addEventListener('beforeunload', () => this.stopAutoScroll());
+      document.addEventListener('visibilitychange', finish);
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && (this.dragState || this.autoScrollRaf)) finish();
+      }, true);
     }
 
     clearDropMarks(activeCard) {
@@ -865,35 +942,78 @@
     }
 
     endDrag() {
-      this.grid.querySelectorAll('.dragging').forEach((el) => el.classList.remove('dragging'));
-      this.clearDropMarks();
+      // 先停滚动，保证无论后续 DOM 是否还完整，计时器都已释放
       this.stopAutoScroll();
       this.dragState = null;
+      if (!this.grid) return;
+      this.grid.querySelectorAll('.dragging').forEach((el) => el.classList.remove('dragging'));
+      this.clearDropMarks();
     }
 
     checkAutoScroll(event) {
+      // 没有拖拽状态时绝不允许启动滚动
+      if (!this.dragState) {
+        this.stopAutoScroll();
+        return;
+      }
+
       const rect = this.grid.getBoundingClientRect();
-      const zone = 42;
+      const zone = 48;
       const nearTop = event.clientY - rect.top < zone;
       const nearBottom = rect.bottom - event.clientY < zone;
+
+      const max = this.grid.scrollHeight - this.grid.clientHeight;
+      // 已经滚到顶/底就没有继续滚的必要，直接停，避免空转
+      if (nearTop && this.grid.scrollTop <= 1) {
+        this.stopAutoScroll();
+        return;
+      }
+      if (nearBottom && this.grid.scrollTop >= max - 1) {
+        this.stopAutoScroll();
+        return;
+      }
+
       if (nearTop) this.startAutoScroll(-1);
       else if (nearBottom) this.startAutoScroll(1);
       else this.stopAutoScroll();
     }
 
     startAutoScroll(direction) {
-      if (this.autoScrollTimer) {
-        this.autoScrollTimer.direction = direction;
-        return;
-      }
-      const timer = setInterval(() => {
-        this.grid.scrollTop += timer.direction * 6;
-      }, 16);
-      timer.direction = direction;
-      this.autoScrollTimer = timer;
+      this.autoScrollDirection = direction;
+
+      if (this.autoScrollRaf) return;
+
+      const step = () => {
+        // 拖拽结束或方向被清空，立即释放帧回调
+        if (!this.dragState || !this.autoScrollDirection || !this.grid) {
+          this.stopAutoScroll();
+          return;
+        }
+
+        const grid = this.grid;
+        const max = Math.max(0, grid.scrollHeight - grid.clientHeight);
+        const next = clamp(grid.scrollTop + this.autoScrollDirection * 8, 0, max);
+        grid.scrollTop = next;
+
+        // 贴边即停，不再占用动画帧
+        if (next <= 0 || next >= max) {
+          this.stopAutoScroll();
+          return;
+        }
+
+        this.autoScrollRaf = requestAnimationFrame(step);
+      };
+
+      this.autoScrollRaf = requestAnimationFrame(step);
     }
 
     stopAutoScroll() {
+      if (this.autoScrollRaf) {
+        cancelAnimationFrame(this.autoScrollRaf);
+        this.autoScrollRaf = null;
+      }
+      this.autoScrollDirection = 0;
+      // 清理历史遗留的 interval（旧实现使用）
       if (this.autoScrollTimer) {
         clearInterval(this.autoScrollTimer);
         this.autoScrollTimer = null;
